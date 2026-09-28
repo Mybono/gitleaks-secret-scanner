@@ -14,7 +14,8 @@
     "postinstall": "node dist/bin/set-permissions.js && node dist/bin/postinstall.js",
     "preuninstall": "node dist/bin/preuninstall.js",
     "test": "node --import tsx --test test/**/*.test.ts",
-    "check": "pr-checkmate all"
+    "check": "pr-checkmate all",
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s"
   },
   "dependencies": {
     "fs-extra": "^11.2.0",
@@ -25,6 +26,7 @@
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^26.6.3",
+    "conventional-changelog-cli": "^5.0.0",
     "pr-checkmate": "3.0.2",
     "tsx": "^4.19.2",
     "typescript": "^6.0.3"
@@ -36,6 +38,9 @@
     "husky": {
       "optional": true
     }
+  },
+  "overrides": {
+    "conventional-changelog-angular": "8.3.1"
   },
   "license": "MIT",
   "repository": {

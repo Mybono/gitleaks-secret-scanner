@@ -1,9 +1,15 @@
-name: PR CheckMate
+name: PR Gate
 
 on:
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+    # Without this, the changelog job's own commit below would re-trigger this
+    # workflow on every push — an infinite loop.
+    paths-ignore:
+      - CHANGELOG.md
 
 # Least privilege. `pull-requests: write` is what lets the run upsert its summary
 # comment on the PR; drop it and the checks still run, they just report to the log.
@@ -14,14 +20,17 @@ permissions:
 # Push three times in a minute and the first two runs become answers to questions
 # nobody is asking any more — they still hold a runner, and they still race to
 # upsert the summary comment, so a stale verdict can land on top of a fresh one.
-# Keyed per PR, so runs on different pull requests never cancel each other.
+# Keyed per PR (or per branch, for pushes), so unrelated runs never cancel each other.
 concurrency:
-  group: pr-checkmate-${{ github.workflow }}-${{ github.ref }}
+  group: pr-gate-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  pr-checkmate:
+  # Runs on every PR into main. This is the gate: branch protection requires it,
+  # so nothing reaches main without passing these checks first.
+  checks:
     name: PR CheckMate
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     # A hung step otherwise runs to GitHub's six-hour default before anyone hears
     # about it. Every check here has its own internal timeout; this is the backstop
@@ -90,3 +99,45 @@ jobs:
           # and the summary comment silently never reaches the PR.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx pr-checkmate all
+
+  # Runs only after a merge lands on main — which, with branch protection on the
+  # `checks` job above, only happens once PR CheckMate has already passed. So this
+  # never regenerates the changelog for code that failed the gate.
+  changelog:
+    name: Update Changelog
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate changelog
+        run: npm run changelog
+
+      - name: Commit changelog
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if git diff --quiet -- CHANGELOG.md; then
+            echo "No changelog changes."
+          else
+            git add CHANGELOG.md
+            git commit -m "docs(changelog): update CHANGELOG.md [skip ci]"
+            git push origin HEAD:main
+          fi

@@ -1,5 +1,9 @@
 # Gitleaks Secret Scanner
 
+[![version](https://img.shields.io/badge/version-3.0.0-blue)](https://www.npmjs.com/package/gitleaks-secret-scanner-new)
+[![PR Gate](https://github.com/Mybono/gitleaks-secret-scanner/actions/workflows/pr-gate.yml/badge.svg)](https://github.com/Mybono/gitleaks-secret-scanner/actions/workflows/pr-gate.yml)
+[![Node.js >=20](https://img.shields.io/badge/node-%3E%3D20-339933?logo=node.js&logoColor=white)](https://nodejs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Checked with PR CheckMate](https://img.shields.io/badge/checked_with-PR_CheckMate-2ea44f)](https://www.npmjs.com/package/pr-checkmate)
 
