@@ -43,46 +43,58 @@ function applyArg(config: ScanConfig, arg: string, val: string | undefined): num
     case '--gitleaks-version':
       if (isFlagWithValue(val)) {
         config.version = val;
+
         return 1;
       }
       logger.warn('⚠️ --gitleaks-version flag requires a version number.');
+
       return 0;
     case '--html-report':
       if (isFlagWithValue(val)) {
         config.htmlReport = val;
+
         return 1;
       }
       config.htmlReport = 'gitleaks-report.html';
+
       return 0;
     case '--report-format':
     case '-f':
       if (isFlagWithValue(val)) {
         config.reportFormat = val;
+
         return 1;
       }
       logger.warn('⚠️ --report-format (-f) flag requires a format.');
+
       return 0;
     case '--report-path':
     case '-r':
       if (isFlagWithValue(val)) {
         config.reportPath = val;
+
         return 1;
       }
       logger.warn('⚠️ --report-path (-r) flag requires a path.');
+
       return 0;
     case '--diff-mode':
       if (isFlagWithValue(val)) {
         config.diffMode = val as DiffMode;
+
         return 1;
       }
       logger.warn('⚠️ --diff-mode flag requires a mode (staged/all/ci).');
+
       return 0;
     case '--depth':
       if (isFlagWithValue(val) && !isNaN(parseInt(val, 10))) {
         config.scanDepth = parseInt(val, 10);
+
         return 1;
       }
       logger.warn('⚠️ --depth flag requires a number.');
+
       return 0;
     default:
       return -1;
