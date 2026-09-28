@@ -9,7 +9,7 @@ const PACKAGE_JSON = 'package.json';
 export function isHuskyInstalled(): boolean {
   try {
     const projectRoot = process.cwd();
-    const packageJsonPath = path.join(projectRoot, 'package.json');
+    const packageJsonPath = path.join(projectRoot, PACKAGE_JSON);
 
     if (!fs.existsSync(packageJsonPath)) {
       return false;
@@ -104,7 +104,7 @@ fi
       mode: 0o755,
     });
 
-    const packageJsonPath = path.join(process.cwd(), 'package.json');
+    const packageJsonPath = path.join(process.cwd(), PACKAGE_JSON);
     if (fs.existsSync(packageJsonPath)) {
       const packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf8'));
 
@@ -118,7 +118,7 @@ fi
           : 'husky';
 
         await fs.writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n');
-        logger.print('✅ Added husky to package.json prepare script.');
+        logger.print(`✅ Added husky to ${PACKAGE_JSON} prepare script.`);
       }
     }
 
@@ -218,8 +218,8 @@ export async function setupHusky(options: SetupHuskyOptions = {}): Promise<void>
       process.exit(1);
     }
 
-    if (!fs.existsSync(path.join(process.cwd(), 'package.json'))) {
-      logger.error('❌ No package.json found.');
+    if (!fs.existsSync(path.join(process.cwd(), PACKAGE_JSON))) {
+      logger.error(`❌ No ${PACKAGE_JSON} found.`);
       logger.print('ℹ️  Please run this command from the root of your npm project.\n');
       printManualInstructions(command);
       process.exit(1);

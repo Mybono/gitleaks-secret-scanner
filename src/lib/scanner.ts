@@ -6,6 +6,8 @@ import type { Leak, ScanConfig } from '../types.js';
 import { logger } from '../utils/logger.js';
 import { generateHtmlReport } from './report-generator.js';
 
+const GIT = 'git';
+
 export async function runScan(binaryPath: string, config: ScanConfig): Promise<boolean> {
   if (!fs.existsSync(binaryPath)) {
     throw new Error('Gitleaks binary missing');
@@ -77,7 +79,7 @@ async function runCiScan(binaryPath: string, config: ScanConfig): Promise<Leak[]
       7,
     )}...`,
   );
-  const changedFilesOutput = execFileSync('git', ['diff', '--name-only', `${baseSha}..${headSha}`])
+  const changedFilesOutput = execFileSync(GIT, ['diff', '--name-only', `${baseSha}..${headSha}`])
     .toString()
     .trim();
   if (!changedFilesOutput) {
@@ -109,7 +111,7 @@ async function runCiScan(binaryPath: string, config: ScanConfig): Promise<Leak[]
   const enrichedLeaks: Leak[] = [];
   for (const leak of leaks) {
     try {
-      const blameOutput = execFileSync('git', [
+      const blameOutput = execFileSync(GIT, [
         'blame',
         '-L',
         `${leak.StartLine},${leak.StartLine}`,
@@ -143,13 +145,13 @@ async function runAllUncommittedScan(binaryPath: string, config: ScanConfig): Pr
 
   let otherLeaks: Leak[] = [];
 
-  const unstagedFiles = execFileSync('git', ['diff', '--name-only'])
+  const unstagedFiles = execFileSync(GIT, ['diff', '--name-only'])
     .toString()
     .trim()
     .split('\n')
     .filter(Boolean);
 
-  const untrackedFiles = execFileSync('git', ['ls-files', '--others', '--exclude-standard'])
+  const untrackedFiles = execFileSync(GIT, ['ls-files', '--others', '--exclude-standard'])
     .toString()
     .trim()
     .split('\n')
@@ -205,7 +207,7 @@ async function runStagedScan(
   config: ScanConfig,
   silent = false,
 ): Promise<Leak[]> {
-  const stagedFiles = execFileSync('git', ['diff', '--cached', '--name-only']).toString().trim();
+  const stagedFiles = execFileSync(GIT, ['diff', '--cached', '--name-only']).toString().trim();
   if (!stagedFiles) {
     if (!silent) logger.info('✅ No staged changes to scan.');
 
@@ -213,8 +215,8 @@ async function runStagedScan(
   }
   try {
     if (!silent) logger.info('Running Scan on staged changes...');
-    const treeHash = execFileSync('git', ['write-tree']).toString().trim();
-    const commitHash = execFileSync('git', ['commit-tree', treeHash, '-p', 'HEAD'], {
+    const treeHash = execFileSync(GIT, ['write-tree']).toString().trim();
+    const commitHash = execFileSync(GIT, ['commit-tree', treeHash, '-p', 'HEAD'], {
       input: 'gitleaks-secret-scanner virtual commit\n',
     })
       .toString()
@@ -234,7 +236,7 @@ async function runHistoryScan(binaryPath: string, config: ScanConfig): Promise<L
     args.push('--log-opts', `--max-count=${config.scanDepth}`);
   } else {
     const commitCount = parseInt(
-      execFileSync('git', ['rev-list', '--count', 'HEAD']).toString().trim(),
+      execFileSync(GIT, ['rev-list', '--count', 'HEAD']).toString().trim(),
       10,
     );
     logger.info(`Scanning ${commitCount} total commits in repository history...`);
