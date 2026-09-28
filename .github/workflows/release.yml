@@ -62,10 +62,8 @@ jobs:
       - name: Update npm
         run: npm install -g npm@latest
 
-      # Repo is public, so provenance is available and adds a signed
-      # attestation linking the published tarball to this exact workflow run.
       - name: Publish to npm
-        run: npm publish --access public --provenance
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
