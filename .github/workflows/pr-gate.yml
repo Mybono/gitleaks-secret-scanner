@@ -26,6 +26,46 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Runs the actual test suite plus a real end-to-end install on both platforms
+  # this package ships a binary path for. Windows was previously never exercised
+  # in CI at all — the zip/unzipper extraction path and the resulting .exe only
+  # ever ran on a maintainer's machine, if that.
+  test:
+    name: Test (${{ matrix.os }})
+    if: github.event_name == 'pull_request'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Run unit tests
+        run: npm test
+
+      # Not a unit test: this actually downloads the real Gitleaks release for
+      # the runner's OS/arch and executes it. On Windows that means the
+      # unzipper-based extraction path and the resulting gitleaks.exe — the one
+      # part of this package that unit tests alone can never cover, because it
+      # depends on the platform's own archive format and executable loader.
+      - name: Smoke test real binary install
+        run: node dist/bin/cli.js --engine-version
+
   # Runs on every PR into main. This is the gate: branch protection requires it,
   # so nothing reaches main without passing these checks first.
   checks:

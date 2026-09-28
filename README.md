@@ -129,10 +129,13 @@ rm -rf ~/.gitleaks-cache
 Requires Node.js >= 20.
 
 ```bash
-npm run build   # compile TypeScript (src/ -> dist/)
-npm test        # run the test suite
-npm run lint     # ESLint
+npm run build     # compile TypeScript (src/ -> dist/)
+npm test          # run the test suite
+npm run check     # lint, typecheck, security and dependency checks via PR CheckMate
+npm run changelog  # regenerate CHANGELOG.md from conventional commits
 ```
+
+Every PR is tested on Ubuntu and Windows (`.github/workflows/pr-gate.yml`), including a smoke test that downloads and runs the real platform-specific Gitleaks binary — not just the unit tests, which don't touch the underlying archive format or executable.
 
 ## Known limitations
 

@@ -1,11 +1,11 @@
 {
     "schema_version": 2,
-    "commit": "324a53cd3c9d3a3b7071ec57024d65b35f73b0b7",
-    "indexed_at": "2026-09-28T13:28:24Z",
+    "commit": "8089c39dac3f83b4b2b966b7b17925a78e82a66d",
+    "indexed_at": "2026-09-28T13:30:16Z",
     "project": "Users-user-Projects-gitleaks-secret-scanner",
     "nodes": 227,
     "edges": 608,
     "original_size": 3276800,
-    "compressed_size": 302398,
+    "compressed_size": 303133,
     "compression_level": 3
 }
