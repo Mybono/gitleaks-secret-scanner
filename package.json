@@ -11,8 +11,8 @@
   "scripts": {
     "build": "tsc",
     "prepack": "npm run build",
-    "postinstall": "node dist/bin/set-permissions.js && node dist/bin/postinstall.js",
-    "preuninstall": "node dist/bin/preuninstall.js",
+    "postinstall": "node scripts/postinstall.cjs",
+    "preuninstall": "node scripts/preuninstall.cjs",
     "test": "node --import tsx --test test/**/*.test.ts",
     "check": "pr-checkmate all",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s"
@@ -61,6 +61,7 @@
   },
   "files": [
     "dist",
+    "scripts",
     "templates",
     "LICENSE",
     "README.md"
