@@ -1,7 +1,7 @@
 {
     "schema_version": 2,
-    "commit": "bc2a8b385872dc1e9a2cc752e64910a9475d2264",
-    "indexed_at": "2026-09-28T13:50:29Z",
+    "commit": "e3ee59c99360933a14844845360fb7f57061c04f",
+    "indexed_at": "2026-09-28T13:51:34Z",
     "project": "Users-user-Projects-gitleaks-secret-scanner",
     "nodes": 236,
     "edges": 626,
