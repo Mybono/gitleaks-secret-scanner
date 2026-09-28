@@ -1,6 +1,6 @@
 # Gitleaks Secret Scanner
 
-[![version](https://img.shields.io/badge/version-3.0.0-blue)](https://www.npmjs.com/package/gitleaks-secret-scanner-new)
+[![version](https://img.shields.io/badge/version-3.0.0-blue)](https://www.npmjs.com/package/gitleaks-secret-scanner-fixed)
 [![PR Gate](https://github.com/Mybono/gitleaks-secret-scanner/actions/workflows/pr-gate.yml/badge.svg)](https://github.com/Mybono/gitleaks-secret-scanner/actions/workflows/pr-gate.yml)
 [![Node.js >=20](https://img.shields.io/badge/node-%3E%3D20-339933?logo=node.js&logoColor=white)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -21,13 +21,13 @@ Every pull request here is gated by [PR CheckMate](https://www.npmjs.com/package
 ## Install
 
 ```bash
-npm install gitleaks-secret-scanner-new --save-dev
+npm install gitleaks-secret-scanner-fixed --save-dev
 ```
 
 Or run without installing:
 
 ```bash
-npx gitleaks-secret-scanner-new --diff-mode all --html-report
+npx gitleaks-secret-scanner-fixed --diff-mode all --html-report
 ```
 
 Add scripts to `package.json` as needed:
@@ -86,7 +86,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
-      - run: npx gitleaks-secret-scanner-new --diff-mode ci --html-report scan-report.html
+      - run: npx gitleaks-secret-scanner-fixed --diff-mode ci --html-report scan-report.html
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -104,7 +104,7 @@ secret-scan-mr:
     BASE_SHA: ${CI_MERGE_REQUEST_DIFF_BASE_SHA}
     HEAD_SHA: ${CI_COMMIT_SHA}
   script:
-    - npx gitleaks-secret-scanner-new --diff-mode ci --html-report scan-report.html
+    - npx gitleaks-secret-scanner-fixed --diff-mode ci --html-report scan-report.html
   artifacts:
     when: always
     paths: [scan-report.html]
@@ -115,7 +115,7 @@ secret-scan-mr:
 ## Uninstalling
 
 ```bash
-npm uninstall gitleaks-secret-scanner-new
+npm uninstall gitleaks-secret-scanner-fixed
 ```
 
 npm can't run cleanup hooks on uninstall, so cached binaries survive removal. Delete them manually:
