@@ -1,25 +1,33 @@
 {
-  "name": "gitleaks-secret-scanner-fixed",
-  "version": "2.2.3",
-  "description": "A powerful, intelligent wrapper for the Gitleaks engine that provides accurate and safe secret scanning for local pre-commit hooks and CI/CD pipelines. Fork with fixed tar vulnerability.",
-  "author": "Vijay Kumar",
-  "contributors": [
-    "Artur Polishchuk <artur@mybono.com>"
-  ],
-  "main": "bin/cli.js",
+  "name": "gitleaks-secret-scanner-new",
+  "version": "3.0.0",
+  "description": "A TypeScript wrapper for the Gitleaks engine providing accurate, safe secret scanning for local pre-commit hooks and CI/CD pipelines.",
+  "author": "Artur Polishchuk",
+  "type": "module",
+  "main": "dist/bin/cli.js",
   "bin": {
-    "gitleaks-secret-scanner": "bin/cli.js"
+    "gitleaks-secret-scanner": "dist/bin/cli.js"
   },
   "scripts": {
-    "postinstall": "node bin/set-permissions.js && node bin/postinstall.js",
-    "preuninstall": "node bin/preuninstall.js"
+    "build": "tsc",
+    "prepack": "npm run build",
+    "postinstall": "node dist/bin/set-permissions.js && node dist/bin/postinstall.js",
+    "preuninstall": "node dist/bin/preuninstall.js",
+    "test": "node --import tsx --test test/**/*.test.ts",
+    "check": "pr-checkmate all"
   },
   "dependencies": {
-    "axios": "^1.18.1",
     "fs-extra": "^11.2.0",
     "tar": "^7.5.22",
-    "toml": "^4.1.2",
+    "toml": "^5.0.0",
     "unzipper": "^0.12.3"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^26.6.3",
+    "pr-checkmate": "3.0.2",
+    "tsx": "^4.19.2",
+    "typescript": "^7.0.2"
   },
   "peerDependencies": {
     "husky": ">=9.0.0"
@@ -47,8 +55,7 @@
     "node": ">=20"
   },
   "files": [
-    "bin",
-    "lib",
+    "dist",
     "templates",
     "LICENSE",
     "README.md"

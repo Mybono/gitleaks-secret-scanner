@@ -1,0 +1,92 @@
+name: PR CheckMate
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+# Least privilege. `pull-requests: write` is what lets the run upsert its summary
+# comment on the PR; drop it and the checks still run, they just report to the log.
+permissions:
+  contents: read
+  pull-requests: write
+
+# Push three times in a minute and the first two runs become answers to questions
+# nobody is asking any more — they still hold a runner, and they still race to
+# upsert the summary comment, so a stale verdict can land on top of a fresh one.
+# Keyed per PR, so runs on different pull requests never cancel each other.
+concurrency:
+  group: pr-checkmate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pr-checkmate:
+    name: PR CheckMate
+    runs-on: ubuntu-latest
+    # A hung step otherwise runs to GitHub's six-hour default before anyone hears
+    # about it. Every check here has its own internal timeout; this is the backstop
+    # for the ones that cannot fail themselves — a wedged network fetch, a tool
+    # waiting on stdin. Raise it for a large monorepo.
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # Required, not optional. Without the full history the PR base commit is
+          # not in the clone, no diff range can be built, and every diff-based
+          # check — Diff Security, Workflow Security, Dockerfile Security,
+          # Sensitive Files and a dozen others — skips itself. The run then says
+          # `Scan Scope: … set fetch-depth: 0`, which is this line.
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # PR CheckMate fetches only the tooling this repository turns out to need
+      # (`npx pr-checkmate doctor` prints what and why). Without this step that
+      # tooling is fetched again on every run: the download shrinks, the wait
+      # does not. The key carries the pr-checkmate version, so an upgrade fetches
+      # afresh instead of reusing tooling meant for the previous one.
+      - name: Cache PR CheckMate tooling
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cache/pr-checkmate
+          key: pr-checkmate-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            pr-checkmate-${{ runner.os }}-
+
+      # Grype keeps its own vulnerability database, and it is the single largest
+      # download in the whole run: 134 MB compressed, 1.9 GB unpacked, refreshed
+      # daily upstream. Without this step every job pays for it again. The key is
+      # dated rather than content-hashed, because the thing that changes is the
+      # upstream database, not anything in this repository — a stale entry is
+      # restored by the prefix and grype updates it in place.
+      - name: Cache Grype vulnerability database
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cache/grype
+          key: grype-db-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            grype-db-${{ runner.os }}-
+
+      # One job runs the whole registry. Splitting it per check would repeat the
+      # checkout and install for every one of them, and the selection of what runs
+      # belongs in pr-checkmate.json (`severity`), not in copied YAML.
+      #
+      # This template is the one `init` scaffolds when pr-checkmate IS a
+      # dependency: `npm ci` above installs it, so npx runs that copy at the
+      # version your lockfile pins. A repository that does not install it gets
+      # the container variant instead, because bare `npx` would resolve to the
+      # newest release and download it on every job.
+      - name: Run PR CheckMate
+        env:
+          # Not injected automatically: without this the run cannot authenticate,
+          # and the summary comment silently never reaches the PR.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx pr-checkmate all

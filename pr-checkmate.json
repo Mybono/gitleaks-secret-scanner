@@ -1,0 +1,51 @@
+{
+  "$schema": "./node_modules/pr-checkmate/pr-checkmate.schema.json",
+  "languages": [
+    "typescript"
+  ],
+    "commands": {
+    "npx pr-checkmate init": "Update pr-checkmate.json",
+    "npx pr-checkmate all": "Run all checks (the PR diff in CI, every tracked file locally)",
+    "npx pr-checkmate all --full": "Run all checks over every tracked file, CI included",
+    "npx pr-checkmate lint": "Lint code using ESLint",
+    "npx pr-checkmate prettier": "Format code using Prettier",
+    "npx pr-checkmate deps": "Check project dependencies",
+    "npx pr-checkmate npm-audit": "Run package vulnerabilities check",
+    "npx pr-checkmate security": "Security scan",
+    "npx pr-checkmate spellcheck": "Run spellcheck via cspell",
+    "npx pr-checkmate typecheck": "TypeScript type check (tsc --noEmit)",
+    "npx pr-checkmate diff-smell": "Scan git diff for code smells",
+    "npx pr-checkmate pr-body": "Validate PR description",
+    "npx pr-checkmate duplicate": "Detect duplicate code blocks (jscpd)"
+  },
+  "sourcePath": "src",
+  "typecheck": {
+    "enabled": true
+  },
+  "prBody": {
+    "enabled": true,
+    "minLength": 20,
+    "requireTicket": false
+  },
+    "cspell": {
+    "enabled": true,
+    "words": [
+      "preuninstall",
+      "Vijay",
+      "Kumar",
+      "sarif",
+      "gitleaksrc",
+      "huskyrc",
+      "unzipper",
+      "armv",
+      "sarif",
+      "unzipper"
+    ],
+    "ignorePaths": [],
+    "ignoreRegExpList": [],
+    "dictionaries": [
+      "en"
+    ],
+    "language": "en"
+  }
+}

@@ -26,3 +26,4 @@ rad.json
 #Test results file
 TestResults.xml
 .claude
+dist/
