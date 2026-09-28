@@ -1,3 +1,8 @@
+### Node ###
+node_modules/
+npm-debug.log*
+.env
+
 ### AL ###
 #Template for AL projects for Dynamics 365 Business Central
 #launch.json folder
