@@ -68,6 +68,15 @@ jobs:
 
   # Runs on every PR into main. This is the gate: branch protection requires it,
   # so nothing reaches main without passing these checks first.
+  #
+  # Container variant, deliberately: this repo does not carry pr-checkmate as a
+  # dependency (it was a devDependency briefly, but that pulled ~530 transitive
+  # packages into every npm ci/audit/lockfile just to run a gate that doesn't
+  # need to live in this repo's own dependency tree). The alternative, bare
+  # `npx pr-checkmate`, would resolve to whatever is newest on the registry and
+  # download it fresh on every job — and a major release of the gate could
+  # start failing builds that passed yesterday, with no line changed here to
+  # explain why. The image tag below pins the major so nothing moves under us.
   checks:
     name: PR CheckMate
     if: github.event_name == 'pull_request'
@@ -88,57 +97,34 @@ jobs:
           # `Scan Scope: … set fetch-depth: 0`, which is this line.
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: 24
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      # PR CheckMate fetches only the tooling this repository turns out to need
-      # (`npx pr-checkmate doctor` prints what and why). Without this step that
-      # tooling is fetched again on every run: the download shrinks, the wait
-      # does not. The key carries the pr-checkmate version, so an upgrade fetches
-      # afresh instead of reusing tooling meant for the previous one.
-      - name: Cache PR CheckMate tooling
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: ~/.cache/pr-checkmate
-          key: pr-checkmate-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            pr-checkmate-${{ runner.os }}-
-
-      # Grype keeps its own vulnerability database, and it is the single largest
-      # download in the whole run: 134 MB compressed, 1.9 GB unpacked, refreshed
-      # daily upstream. Without this step every job pays for it again. The key is
-      # dated rather than content-hashed, because the thing that changes is the
-      # upstream database, not anything in this repository — a stale entry is
-      # restored by the prefix and grype updates it in place.
-      - name: Cache Grype vulnerability database
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: ~/.cache/grype
-          key: grype-db-${{ runner.os }}-${{ github.run_id }}
-          restore-keys: |
-            grype-db-${{ runner.os }}-
-
-      # One job runs the whole registry. Splitting it per check would repeat the
-      # checkout and install for every one of them, and the selection of what runs
-      # belongs in pr-checkmate.json (`severity`), not in copied YAML.
+      # One job runs the whole registry. Which checks run is decided in
+      # pr-checkmate.json (`severity`), not by splitting this into jobs.
       #
-      # This template is the one `init` scaffolds when pr-checkmate IS a
-      # dependency: `npm ci` above installs it, so npx runs that copy at the
-      # version your lockfile pins. A repository that does not install it gets
-      # the container variant instead, because bare `npx` would resolve to the
-      # newest release and download it on every job.
+      # `--user` is not a detail: without it every file a formatter rewrites
+      # comes back owned by root, and the next step in the pipeline fails on
+      # permissions long after this one reported success.
+      #
+      # The environment variables are passed through by name rather than by
+      # value: the run reads them to find the PR, and interpolating them into
+      # the command line would put their contents through a shell.
       - name: Run PR CheckMate
         env:
           # Not injected automatically: without this the run cannot authenticate,
           # and the summary comment silently never reaches the PR.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx pr-checkmate all
+        run: |
+          docker run --rm \
+            -v "$PWD:/repo" \
+            --user "$(id -u):$(id -g)" \
+            -e GITHUB_TOKEN \
+            -e GITHUB_REPOSITORY \
+            -e GITHUB_EVENT_NAME \
+            -e GITHUB_EVENT_PATH \
+            -e GITHUB_REF \
+            -e GITHUB_SHA \
+            -e CI \
+            -v "$GITHUB_EVENT_PATH:$GITHUB_EVENT_PATH:ro" \
+            ghcr.io/mybono/pr-checkmate:3 all
 
   # Runs only after a merge lands on main — which, with branch protection on the
   # `checks` job above, only happens once PR CheckMate has already passed. So this
