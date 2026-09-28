@@ -1,0 +1,79 @@
+name: Manual Release to npm
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: patch
+
+jobs:
+  publish:
+    name: Bump Version & Publish to npm
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Bump version
+        id: version
+        env:
+          BUMP_TYPE: ${{ inputs.bump_type }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          npm version "$BUMP_TYPE" --no-git-tag-version
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "New version: $NEW_VERSION"
+          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+
+          git add package.json package-lock.json
+          git commit -m "chore(release): $NEW_VERSION"
+          git push origin HEAD:main
+
+      # Repo is public, so provenance is available and adds a signed
+      # attestation linking the published tarball to this exact workflow run.
+      - name: Publish to npm
+        run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # Only reached once npm publish above has actually succeeded, so a tag
+      # never points at a version that isn't really on the registry.
+      - name: Tag release
+        env:
+          NEW_VERSION: ${{ steps.version.outputs.new_version }}
+        run: |
+          git tag -a "v$NEW_VERSION" -m "chore(release): $NEW_VERSION"
+          git push origin "v$NEW_VERSION"
+
+      - name: ✅ Published
+        env:
+          NEW_VERSION: ${{ steps.version.outputs.new_version }}
+        run: |
+          echo "Successfully published v$NEW_VERSION to npm!"
+          echo "https://www.npmjs.com/package/gitleaks-secret-scanner-fixed/v/$NEW_VERSION"
