@@ -55,6 +55,13 @@ jobs:
           git commit -m "chore(release): $NEW_VERSION"
           git push origin HEAD:main
 
+      # The npm CLI bundled with actions/setup-node's Node 20 is too old to
+      # speak the granular-token staging protocol; it falls back to a plain
+      # PUT that the registry rejects with an opaque 404 instead of staging
+      # it for approval. Latest CLI handles it correctly.
+      - name: Update npm
+        run: npm install -g npm@latest
+
       # Repo is public, so provenance is available and adds a signed
       # attestation linking the published tarball to this exact workflow run.
       - name: Publish to npm
