@@ -1,5 +1,5 @@
 {
-  "name": "@mybono/gitleaks-secret-scanner",
+  "name": "gitleaks-secret-scanner-fixed",
   "version": "2.2.0",
   "description": "A powerful, intelligent wrapper for the Gitleaks engine that provides accurate and safe secret scanning for local pre-commit hooks and CI/CD pipelines. Fork with fixed tar vulnerability.",
   "author": "Vijay Kumar",
@@ -30,9 +30,6 @@
     }
   },
   "license": "MIT",
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Mybono/gitleaks-secret-scanner.git"
