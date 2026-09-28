@@ -76,20 +76,6 @@ jobs:
       - name: Update npm
         run: npm install -g npm@latest
 
-      # Temporary: the last several runs failed publish with a 404 on an
-      # existing, owned package despite the token supposedly having
-      # read-write-all-packages + bypass-2FA. This proves what identity and
-      # access the secret actually carries in THIS run, instead of guessing
-      # from the npmjs.com UI, which may not reflect what's really stored in
-      # the GitHub secret. Remove once the real cause is confirmed.
-      - name: Debug npm auth
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          npm whoami || echo "whoami failed"
-          npm access list packages || echo "access list failed"
-          npm access get status gitleaks-secret-scanner-fixed || echo "access get status failed"
-
       - name: Publish to npm
         run: npm publish --access public
         env:
