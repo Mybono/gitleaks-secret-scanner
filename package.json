@@ -1,6 +1,6 @@
 {
   "name": "gitleaks-secret-scanner-fixed",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "A powerful, intelligent wrapper for the Gitleaks engine that provides accurate and safe secret scanning for local pre-commit hooks and CI/CD pipelines. Fork with fixed tar vulnerability.",
   "author": "Vijay Kumar",
   "contributors": [
