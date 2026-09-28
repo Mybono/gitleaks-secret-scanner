@@ -1,6 +1,6 @@
 {
   "name": "gitleaks-secret-scanner-fixed",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "description": "A TypeScript wrapper for the Gitleaks engine providing accurate, safe secret scanning for local pre-commit hooks and CI/CD pipelines.",
   "author": "Artur Polishchuk",
   "type": "module",
