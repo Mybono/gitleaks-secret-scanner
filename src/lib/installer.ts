@@ -32,6 +32,9 @@ if (!fs.existsSync(CACHE_DIR)) {
   fs.mkdirSync(CACHE_DIR, { recursive: true });
 }
 
+// Used when the GitHub releases API is unreachable. Bumped by .github/workflows/engine-version.yml.
+const FALLBACK_GITLEAKS_VERSION = '8.30.0';
+
 async function fetchLatestVersion(): Promise<string> {
   return new Promise(resolve => {
     const options = {
@@ -55,7 +58,7 @@ async function fetchLatestVersion(): Promise<string> {
         if (res.statusCode !== 200) {
           logger.warn('⚠️ Could not fetch latest version, using fallback');
 
-          return resolve('8.30.0');
+          return resolve(FALLBACK_GITLEAKS_VERSION);
         }
 
         try {
@@ -64,20 +67,20 @@ async function fetchLatestVersion(): Promise<string> {
           resolve(version);
         } catch {
           logger.warn('⚠️ Could not parse latest version, using fallback');
-          resolve('8.30.0');
+          resolve(FALLBACK_GITLEAKS_VERSION);
         }
       });
     });
 
     req.on('error', () => {
       logger.warn('⚠️ Network error fetching latest version, using fallback');
-      resolve('8.30.0');
+      resolve(FALLBACK_GITLEAKS_VERSION);
     });
 
     req.setTimeout(5000, () => {
       req.destroy();
       logger.warn('⚠️ Timeout fetching latest version, using fallback');
-      resolve('8.30.0');
+      resolve(FALLBACK_GITLEAKS_VERSION);
     });
 
     req.end();

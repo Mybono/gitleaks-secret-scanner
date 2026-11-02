@@ -1,0 +1,69 @@
+name: Weekly Audit Fix
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+# Safety net for what Dependabot skips. In October 2026 a grouped security PR
+# stayed open and Dependabot deferred the `toml` fix into it ("The existing
+# pull request will update in a separate job") without ever updating it.
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: audit-fix
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    name: Audit and fix runtime dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit runtime dependencies
+        id: audit
+        run: |
+          if npm audit --omit=dev; then
+            echo "clean=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "clean=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Fix, verify and open a PR
+        if: steps.audit.outputs.clean == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="audit-fix/$(date +%Y-%m-%d)"
+          npm audit fix --omit=dev
+          if git diff --quiet -- package.json package-lock.json; then
+            echo "::error::npm audit fix changed nothing; runtime vulnerabilities need manual work"
+            exit 1
+          fi
+          npm run build
+          npm test
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add package.json package-lock.json
+          git commit -m "fix(deps): npm audit fix"
+          git push origin "$BRANCH"
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "fix(deps): npm audit fix" \
+            --body "Weekly audit found vulnerabilities in runtime dependencies. This PR applies \`npm audit fix --omit=dev\`; build and tests passed in the workflow that opened it."

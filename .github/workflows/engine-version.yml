@@ -1,0 +1,54 @@
+name: Gitleaks Fallback Version
+
+on:
+  schedule:
+    - cron: '0 7 * * 1'
+  workflow_dispatch:
+
+# The engine is resolved from the latest GitHub release at runtime. Only the
+# fallback constant in installer.ts is pinned, and Dependabot cannot see it.
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: engine-version
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    name: Bump fallback to latest gitleaks release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Bump fallback and open a PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LATEST=$(gh api repos/gitleaks/gitleaks/releases/latest --jq '.tag_name | ltrimstr("v")')
+          CURRENT=$(sed -n "s/^const FALLBACK_GITLEAKS_VERSION = '\(.*\)';/\1/p" src/lib/installer.ts)
+          if [ -z "$CURRENT" ]; then
+            echo "::error::FALLBACK_GITLEAKS_VERSION not found in src/lib/installer.ts"
+            exit 1
+          fi
+          if [ "$LATEST" = "$CURRENT" ]; then
+            echo "Fallback is already $CURRENT."
+            exit 0
+          fi
+
+          BRANCH="engine-version/$LATEST"
+          sed -i "s/^const FALLBACK_GITLEAKS_VERSION = '.*';/const FALLBACK_GITLEAKS_VERSION = '$LATEST';/" src/lib/installer.ts
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add src/lib/installer.ts
+          git commit -m "chore(deps): bump gitleaks fallback to $LATEST"
+          git push origin "$BRANCH"
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "chore(deps): bump gitleaks fallback to $LATEST" \
+            --body "Fallback engine version $CURRENT -> $LATEST. Release notes: https://github.com/gitleaks/gitleaks/releases/tag/v$LATEST"

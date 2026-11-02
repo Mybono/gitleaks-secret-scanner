@@ -1,0 +1,102 @@
+name: Dependabot Merge
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+# Merges patch and minor Dependabot PRs once the three gate checks are green,
+# then dispatches the release when the PR changes shipped dependencies.
+#
+# Deliberately not `gh pr merge --auto`: auto-merge needs a ruleset that
+# requires the checks, and a ruleset on main would reject the direct pushes
+# that release.yml and the changelog job make with GITHUB_TOKEN. Waiting for
+# the checks here gives the same gate without blocking those pushes.
+#
+# The release is dispatched from here because a merge made with GITHUB_TOKEN
+# does not fire `push` workflows; workflow_dispatch is the exception.
+permissions:
+  contents: write
+  pull-requests: write
+  checks: read
+  actions: write
+
+concurrency:
+  group: dependabot-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  merge:
+    name: Merge Dependabot PR
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Only patch and minor go through. Anything else, including an update
+      # with no recognised type, stays open for a person.
+      - name: Check update types
+        id: eligible
+        env:
+          UPDATES: ${{ steps.metadata.outputs.updated-dependencies-json }}
+        run: |
+          if echo "$UPDATES" | jq -e 'length > 0 and all(.[]; .updateType == "version-update:semver-patch" or .updateType == "version-update:semver-minor")' > /dev/null; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "Not auto-merging: update is not patch or minor only."
+          fi
+
+      - name: Wait for required checks
+        if: steps.eligible.outputs.ok == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          REQUIRED='["Test (ubuntu-latest)","Test (windows-latest)","PR CheckMate"]'
+          for _ in $(seq 1 90); do
+            RUNS=$(gh api "repos/$REPO/commits/$SHA/check-runs" --paginate --jq '.check_runs[] | {name, conclusion}' | jq -s .)
+            if echo "$RUNS" | jq -e --argjson req "$REQUIRED" 'any(.[]; (.name as $n | $req | index($n)) != null and (.conclusion == "failure" or .conclusion == "cancelled" or .conclusion == "timed_out"))' > /dev/null; then
+              echo "::error::A required check failed; leaving the PR open."
+              exit 1
+            fi
+            if echo "$RUNS" | jq -e --argjson req "$REQUIRED" '. as $runs | $req | all(. as $n | $runs | any(.name == $n and .conclusion == "success"))' > /dev/null; then
+              echo "All required checks passed."
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "::error::Timed out waiting for required checks."
+          exit 1
+
+      - name: Merge
+        if: steps.eligible.outputs.ok == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: gh pr merge "$PR_URL" --squash --match-head-commit "$SHA"
+
+      # A release is only worth publishing when the PR changed package.json
+      # for a runtime dependency. Lockfile-only and dev-dependency PRs ship
+      # nothing: the published package carries no lockfile.
+      - name: Release when runtime dependencies changed
+        if: steps.eligible.outputs.ok == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          UPDATES: ${{ steps.metadata.outputs.updated-dependencies-json }}
+        run: |
+          if gh pr diff "$PR_URL" --name-only | grep -qx 'package.json' \
+            && echo "$UPDATES" | jq -e 'any(.[]; .dependencyType == "direct:production")' > /dev/null; then
+            gh workflow run release.yml --repo "$GITHUB_REPOSITORY" -f bump_type=patch
+            echo "Release dispatched."
+          else
+            echo "No runtime dependency change in package.json; no release."
+          fi
