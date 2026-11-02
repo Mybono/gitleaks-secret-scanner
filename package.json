@@ -28,7 +28,7 @@
     "@types/node": "^26.6.3",
     "conventional-changelog-cli": "^5.0.0",
     "tsx": "^4.19.2",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   },
   "peerDependencies": {
     "husky": ">=9.0.0"
