@@ -1,7 +1,8 @@
 #!/usr/bin/env node
+import fs from 'fs-extra';
 import os from 'os';
 import path from 'path';
-import fs from 'fs-extra';
+
 import { logger } from '../utils/logger.js';
 
 const CACHE_DIR = path.join(os.homedir(), '.gitleaks-cache');

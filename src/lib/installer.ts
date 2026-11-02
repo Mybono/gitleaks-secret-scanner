@@ -2,9 +2,10 @@ import fs from 'fs';
 import https from 'https';
 import os from 'os';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import * as tar from 'tar';
 import unzipper from 'unzipper';
+import { fileURLToPath } from 'url';
+
 import type { PackageInfo, ScanConfig } from '../types.js';
 import { logger } from '../utils/logger.js';
 

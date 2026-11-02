@@ -1,8 +1,9 @@
+import fs from 'fs-extra';
 import https from 'https';
 import os from 'os';
 import path from 'path';
 import readline from 'readline';
-import fs from 'fs-extra';
+
 import type { AvailableVersion } from '../types.js';
 import { logger } from '../utils/logger.js';
 

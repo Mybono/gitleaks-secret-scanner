@@ -1,16 +1,17 @@
 #!/usr/bin/env node
 import { execFileSync } from 'child_process';
+import fs from 'fs-extra';
 import os from 'os';
 import path from 'path';
 import readline from 'readline';
 import { fileURLToPath } from 'url';
-import fs from 'fs-extra';
-import { showAttribution, version, options } from '../lib/attribution.js';
+
+import { options, showAttribution, version } from '../lib/attribution.js';
 import { loadConfig } from '../lib/config.js';
 import { setupHusky } from '../lib/husky-installer.js';
 import { installGitleaks } from '../lib/installer.js';
-import { runScan, runPassThroughCommand } from '../lib/scanner.js';
-import { selectVersion, manageVersions } from '../lib/version-manager.js';
+import { runPassThroughCommand, runScan } from '../lib/scanner.js';
+import { manageVersions, selectVersion } from '../lib/version-manager.js';
 import { logger } from '../utils/logger.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

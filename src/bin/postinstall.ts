@@ -2,6 +2,7 @@
 import fs from 'fs';
 import path from 'path';
 import readline from 'readline';
+
 import { loadConfig } from '../lib/config.js';
 import { setupHusky } from '../lib/husky-installer.js';
 import { installGitleaks } from '../lib/installer.js';

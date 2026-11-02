@@ -1,7 +1,8 @@
-import { spawn, execFileSync } from 'child_process';
+import { execFileSync, spawn } from 'child_process';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+
 import type { Leak, ScanConfig } from '../types.js';
 import { logger } from '../utils/logger.js';
 import { generateHtmlReport } from './report-generator.js';

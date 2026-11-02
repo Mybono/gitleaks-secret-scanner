@@ -1,7 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import toml from 'toml';
-import type { ScanConfig, DiffMode } from '../types.js';
+
+import type { DiffMode, ScanConfig } from '../types.js';
 import { logger } from '../utils/logger.js';
 
 const VALID_DIFF_MODES: DiffMode[] = ['staged', 'all', 'ci', 'history'];
