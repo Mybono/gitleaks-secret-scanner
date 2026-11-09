@@ -33,7 +33,7 @@ if (!fs.existsSync(CACHE_DIR)) {
 }
 
 // Used when the GitHub releases API is unreachable. Bumped by .github/workflows/engine-version.yml.
-const FALLBACK_GITLEAKS_VERSION = '8.30.0';
+const FALLBACK_GITLEAKS_VERSION = '8.30.1';
 
 async function fetchLatestVersion(): Promise<string> {
   return new Promise(resolve => {
